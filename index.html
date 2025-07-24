@@ -1,0 +1,3184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Эмоциональный Поисковик</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Modern Preloader */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f0f13, #1a1a24, #0f0f13);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+        
+        .preloader-content {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            perspective: 800px;
+        }
+        
+        .preloader-cube {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            animation: rotateCube 6s infinite ease-in-out;
+        }
+        
+        .cube-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backface-visibility: hidden;
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+        
+        .cube-face:nth-child(1) {
+            transform: translateZ(75px);
+            background: linear-gradient(45deg, #9d4edd, #7b2cbf);
+        }
+        .cube-face:nth-child(2) {
+            transform: rotateY(90deg) translateZ(75px);
+            background: linear-gradient(45deg, #ff6b6b, #e63946);
+        }
+        .cube-face:nth-child(3) {
+            transform: rotateY(180deg) translateZ(75px);
+            background: linear-gradient(45deg, #ffd93d, #ffaa00);
+        }
+        .cube-face:nth-child(4) {
+            transform: rotateY(-90deg) translateZ(75px);
+            background: linear-gradient(45deg, #6bcb77, #4caf50);
+        }
+        .cube-face:nth-child(5) {
+            transform: rotateX(90deg) translateZ(75px);
+            background: linear-gradient(45deg, #4d96ff, #1e88e5);
+        }
+        .cube-face:nth-child(6) {
+            transform: rotateX(-90deg) translateZ(75px);
+            background: linear-gradient(45deg, #c77dff, #9c4dff);
+        }
+        
+        .preloader-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            animation: floatParticle 4s infinite ease-in-out;
+            opacity: 0;
+        }
+        
+        .preloader-text {
+            margin-top: 40px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: fadeInOut 2s ease-in-out infinite;
+            text-align: center;
+            max-width: 80%;
+            line-height: 1.6;
+        }
+        
+        @keyframes rotateCube {
+            0%, 100% { transform: rotateX(0) rotateY(0) rotateZ(0); }
+            16.6% { transform: rotateX(90deg) rotateY(0) rotateZ(0); }
+            33.3% { transform: rotateX(90deg) rotateY(90deg) rotateZ(0); }
+            50% { transform: rotateX(90deg) rotateY(90deg) rotateZ(90deg); }
+            66.6% { transform: rotateX(180deg) rotateY(90deg) rotateZ(90deg); }
+            83.3% { transform: rotateX(180deg) rotateY(180deg) rotateZ(90deg); }
+        }
+        
+        @keyframes floatParticle {
+            0% { transform: translate(0, 0) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 0.8; }
+            100% { 
+                transform: translate(
+                    calc(-100px + 200px * var(--x)), 
+                    calc(-100px + 200px * var(--y))
+                ) scale(1.5); 
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+        
+        /* Emotion of the day - hidden by default */
+        .emotion-of-day {
+            background: linear-gradient(135deg, var(--accent-purple), #7b2cbf);
+            border-radius: 0 0 16px 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: white;
+            position: fixed;
+            top: -200px;
+            left: 0;
+            width: 100%;
+            z-index: 90;
+            transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            left: 0;
+            right: 0;
+        }
+        
+        .emotion-of-day.visible {
+            top: 70px;
+        }
+        
+        .emotion-of-day .badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .emotion-of-day h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+        
+        .emotion-of-day p {
+            opacity: 0.9;
+            margin-bottom: 15px;
+            max-width: 800px;
+        }
+        
+        .emotion-of-day .actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* Game Section */
+        .game-section {
+            background: var(--bg-card-dark);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        
+        body.light-theme .game-section {
+            background: var(--bg-card-light);
+        }
+        
+        .game-section.active {
+            display: block;
+            animation: slideUp 0.6s ease;
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .game-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--accent-purple), #c77dff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .game-stats {
+            display: flex;
+            gap: 15px;
+            font-weight: 600;
+        }
+        
+        .game-stats span {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+        
+        body.light-theme .game-stats span {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        
+        .game-question {
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        body.light-theme .game-question {
+            background: rgba(0, 0, 0, 0.03);
+        }
+        
+        .game-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .game-option {
+            padding: 18px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+        
+        body.light-theme .game-option {
+            background: rgba(0, 0, 0, 0.03);
+        }
+        
+        .game-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border-color: rgba(157, 78, 221, 0.3);
+        }
+        
+        .game-option.correct {
+            background: rgba(107, 203, 119, 0.2);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+        
+        .game-option.incorrect {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+        
+        .game-option.selected {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.3);
+        }
+        
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .game-btn {
+            padding: 12px 30px;
+            border-radius: 50px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .game-btn.next {
+            background: var(--accent-purple);
+            color: white;
+        }
+        
+        .game-btn.next:hover {
+            background: #7b2cbf;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(157, 78, 221, 0.4);
+        }
+        
+        .game-btn.restart {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary-dark);
+        }
+        
+        body.light-theme .game-btn.restart {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary-light);
+        }
+        
+        .game-btn.restart:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        body.light-theme .game-btn.restart:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-result {
+            text-align: center;
+            padding: 30px;
+            display: none;
+        }
+        
+        .game-result.active {
+            display: block;
+            animation: fadeIn 0.6s ease;
+        }
+        
+        .result-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, var(--accent-purple), #c77dff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .result-score {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--accent-purple);
+        }
+        
+        /* Floating favorite */
+        .floating-favorite {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--accent-purple);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            box-shadow: 0 5px 20px rgba(157, 78, 221, 0.5);
+            animation: float 4s ease-in-out infinite;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        
+        .floating-favorite:hover {
+            transform: scale(1.1) translateY(-5px);
+            box-shadow: 0 8px 25px rgba(157, 78, 221, 0.7);
+            animation: none;
+        }
+        
+        .floating-favorite .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent-red);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Quick action buttons */
+        .quick-action-btn {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99;
+            box-shadow: 0 4px 15px rgba(77, 150, 255, 0.4);
+            cursor: pointer;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        
+        .quick-action-btn.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .quick-action-btn:nth-child(2) {
+            bottom: 150px;
+            background: var(--accent-green);
+            box-shadow: 0 4px 15px rgba(107, 203, 119, 0.4);
+            transition-delay: 0.1s;
+        }
+        
+        .quick-action-btn:nth-child(3) {
+            bottom: 210px;
+            background: var(--accent-yellow);
+            box-shadow: 0 4px 15px rgba(255, 217, 61, 0.4);
+            transition-delay: 0.2s;
+        }
+        
+        .floating-favorite:hover ~ .quick-action-btn {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        /* Secret feature - rainbow mode */
+        body.rainbow-mode {
+            animation: rainbow 8s linear infinite;
+            background: linear-gradient(45deg, 
+                var(--accent-red), 
+                var(--accent-yellow), 
+                var(--accent-green), 
+                var(--accent-blue), 
+                var(--accent-purple));
+            background-size: 400% 400%;
+        }
+        
+        body.rainbow-mode .logo {
+            animation: rainbowText 5s linear infinite;
+        }
+        
+        @keyframes rainbowText {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        
+        /* Secret feature - confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-purple);
+            opacity: 0;
+            z-index: 1000;
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+        
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.3); }
+            50% { transform: scale(0.9); }
+            75% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0; 
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Base styles */
+        :root {
+            --bg-dark: #0f0f13;
+            --bg-light: #f8f9fa;
+            --bg-card-dark: #1a1a24;
+            --bg-card-light: #ffffff;
+            --bg-hover-dark: #242434;
+            --bg-hover-light: #f0f0f5;
+            --text-primary-dark: #f0f0f0;
+            --text-primary-light: #1a1a24;
+            --text-secondary-dark: #b0b0c0;
+            --text-secondary-light: #6c757d;
+            --accent-red: #ff6b6b;
+            --accent-yellow: #ffd93d;
+            --accent-green: #6bcb77;
+            --accent-blue: #4d96ff;
+            --accent-purple: #9d4edd;
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --footer-height: 60px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+
+        body.light-theme {
+            background-color: var(--bg-light);
+            color: var(--text-primary-light);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 10% 20%, #1a1a24 0%, #0f0f13 100%);
+            z-index: -1;
+            transition: opacity 0.5s ease;
+        }
+
+        body.light-theme::before {
+            opacity: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+            padding-bottom: var(--footer-height);
+        }
+
+        /* Header Styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        body.light-theme .header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-purple), #c77dff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            background: var(--bg-card-dark);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-primary-dark);
+            position: relative;
+        }
+
+        body.light-theme .icon-btn {
+            background: var(--bg-card-light);
+            color: var(--text-primary-light);
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-hover-dark);
+            transform: translateY(-2px);
+        }
+
+        body.light-theme .icon-btn:hover {
+            background: var(--bg-hover-light);
+        }
+
+        .icon-btn.active {
+            background: var(--accent-purple);
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeIn 1s ease;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            min-height: 3.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .typing-text {
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid;
+            animation: blinkCursor 0.7s infinite;
+        }
+
+        @keyframes blinkCursor {
+            0%, 100% { border-color: transparent; }
+            50% { border-color: var(--accent-purple); }
+        }
+
+        .hero-subtitle {
+            color: var(--text-secondary-dark);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        body.light-theme .hero-subtitle {
+            color: var(--text-secondary-light);
+        }
+
+        /* Search Section */
+        .search-section {
+            margin-bottom: 30px;
+            animation: slideUp 0.8s ease;
+        }
+
+        .search-container {
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 20px 16px 50px;
+            border-radius: 50px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-card-dark);
+            color: var(--text-primary-dark);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        body.light-theme .search-input {
+            background: var(--bg-card-light);
+            color: var(--text-primary-light);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.2);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary-dark);
+        }
+
+        body.light-theme .search-icon {
+            color: var(--text-secondary-light);
+        }
+
+        .random-btn {
+            background: var(--bg-card-dark);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-primary-dark);
+            flex-shrink: 0;
+        }
+
+        body.light-theme .random-btn {
+            background: var(--bg-card-light);
+        }
+
+        .random-btn:hover {
+            background: var(--accent-purple);
+            transform: rotate(180deg);
+            color: white;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            margin-bottom: 30px;
+            animation: slideUp 0.9s ease;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .clear-filters {
+            background: none;
+            border: none;
+            color: var(--text-secondary-dark);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        body.light-theme .clear-filters {
+            color: var(--text-secondary-light);
+        }
+
+        .clear-filters:hover {
+            color: var(--text-primary-dark);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        body.light-theme .clear-filters:hover {
+            color: var(--text-primary-light);
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .filter-btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            font-size: 1.05rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .filter-btn:not(.active) {
+            opacity: 0.7;
+        }
+
+        .filter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.7;
+            z-index: -1;
+            transition: var(--transition);
+        }
+
+        .filter-btn.red::before {
+            background: var(--accent-red);
+        }
+
+        .filter-btn.yellow::before {
+            background: var(--accent-yellow);
+        }
+
+        .filter-btn.green::before {
+            background: var(--accent-green);
+        }
+
+        .filter-btn.blue::before {
+            background: var(--accent-blue);
+        }
+
+        .filter-btn.purple::before {
+            background: var(--accent-purple);
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+
+        .filter-btn.active {
+            transform: scale(0.98);
+            opacity: 1;
+        }
+
+        .filter-btn.active::before {
+            opacity: 1;
+        }
+
+        .filter-btn.active {
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .filter-btn.red.active {
+            box-shadow: 0 0 15px var(--accent-red);
+        }
+
+        .filter-btn.yellow.active {
+            box-shadow: 0 0 15px var(--accent-yellow);
+        }
+
+        .filter-btn.green.active {
+            box-shadow: 0 0 15px var(--accent-green);
+        }
+
+        .filter-btn.blue.active {
+            box-shadow: 0 0 15px var(--accent-blue);
+        }
+
+        .filter-btn.purple.active {
+            box-shadow: 0 0 15px var(--accent-purple);
+        }
+
+        .filter-count {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        body.light-theme .filter-count {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Favorite filter button */
+        .favorite-filter {
+            margin-top: 15px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .favorite-filter-btn {
+            background: var(--bg-card-dark);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-primary-dark);
+            font-size: 0.95rem;
+            opacity: 0.8;
+        }
+
+        body.light-theme .favorite-filter-btn {
+            background: var(--bg-card-light);
+            color: var(--text-primary-light);
+        }
+
+        .favorite-filter-btn:hover {
+            background: var(--bg-hover-dark);
+        }
+
+        body.light-theme .favorite-filter-btn:hover {
+            background: var(--bg-hover-light);
+        }
+
+        .favorite-filter-btn.active {
+            background: rgba(157, 78, 221, 0.2);
+            color: var(--accent-purple);
+            opacity: 1;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: grid;
+            gap: 30px;
+            animation: fadeIn 1.2s ease;
+        }
+
+        .category-section {
+            background: var(--bg-card-dark);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: var(--transition);
+            will-change: transform;
+        }
+
+        body.light-theme .category-section {
+            background: var(--bg-card-light);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .category-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        body.light-theme .category-section:hover {
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        body.light-theme .category-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .category-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .category-title.red {
+            color: var(--accent-red);
+        }
+
+        .category-title.yellow {
+            color: var(--accent-yellow);
+        }
+
+        .category-title.green {
+            color: var(--accent-green);
+        }
+
+        .category-title.blue {
+            color: var(--accent-blue);
+        }
+
+        .category-subtitle {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+
+        .category-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .category-indicator.red {
+            background: var(--accent-red);
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        }
+
+        .category-indicator.yellow {
+            background: var(--accent-yellow);
+            box-shadow: 0 0 10px rgba(255, 217, 61, 0.5);
+        }
+
+        .category-indicator.green {
+            background: var(--accent-green);
+            box-shadow: 0 0 10px rgba(107, 203, 119, 0.5);
+        }
+
+        .category-indicator.blue {
+            background: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(77, 150, 255, 0.5);
+        }
+
+        .emotions-list {
+            padding: 10px;
+        }
+
+        .emotion-item {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            will-change: transform, background;
+        }
+
+        .emotion-item:hover {
+            background: var(--bg-hover-dark);
+        }
+
+        body.light-theme .emotion-item:hover {
+            background: var(--bg-hover-light);
+        }
+
+        .emotion-names {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .emotion-name-en {
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+
+        .emotion-name-ru {
+            color: var(--text-secondary-dark);
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        body.light-theme .emotion-name-ru {
+            color: var(--text-secondary-light);
+        }
+
+        .emotion-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .view-btn, .favorite-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-primary-dark);
+            will-change: transform;
+        }
+
+        body.light-theme .view-btn, 
+        body.light-theme .favorite-btn {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary-light);
+        }
+
+        .view-btn:hover {
+            background: var(--accent-purple);
+            transform: rotate(10deg);
+            color: white;
+        }
+
+        .favorite-btn {
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .favorite-btn.active {
+            background: var(--accent-purple);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .favorite-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+
+        .modal-content {
+            background: var(--bg-card-dark);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: translateY(30px);
+            transition: var(--transition);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        body.light-theme .modal-content {
+            background: var(--bg-card-light);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-primary-dark);
+            z-index: 10;
+        }
+
+        body.light-theme .modal-close {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary-light);
+        }
+
+        .modal-close:hover {
+            background: var(--accent-red);
+            transform: rotate(90deg);
+            color: white;
+        }
+
+        .emotion-detail {
+            padding: 40px;
+        }
+
+        .emotion-title {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            transition: color 0.3s ease;
+        }
+
+        .emotion-category {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        body.light-theme .emotion-category {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .description-block {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        body.light-theme .description-block {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .description-block:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .description-title {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary-dark);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        body.light-theme .description-title {
+            color: var(--text-secondary-light);
+        }
+
+        .description-text {
+            color: var(--text-secondary-dark);
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+
+        body.light-theme .description-text {
+            color: var(--text-secondary-light);
+        }
+
+        /* Help Modal */
+        .help-content {
+            padding: 40px;
+        }
+
+        .help-title {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+        }
+
+        .help-steps {
+            display: grid;
+            gap: 25px;
+        }
+
+        .help-step {
+            display: flex;
+            gap: 15px;
+        }
+
+        .step-number {
+            background: var(--accent-purple);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-weight: 600;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .step-description {
+            color: var(--text-secondary-dark);
+            line-height: 1.6;
+        }
+
+        body.light-theme .step-description {
+            color: var(--text-secondary-light);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-secondary-dark);
+        }
+
+        body.light-theme .empty-state {
+            color: var(--text-secondary-light);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--text-primary-dark);
+        }
+
+        body.light-theme .empty-state h3 {
+            color: var(--text-primary-light);
+        }
+
+        /* Footer */
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--footer-height);
+            background: rgba(15, 15, 19, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary-dark);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 50;
+            transition: var(--transition);
+        }
+
+        body.light-theme footer {
+            background: rgba(248, 249, 250, 0.8);
+            color: var(--text-secondary-light);
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            width: 100%;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copyright {
+            opacity: 0.7;
+        }
+
+        .version {
+            opacity: 0.5;
+        }
+
+        /* Secret feature indicator */
+        .secret-indicator {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            opacity: 0.3;
+            z-index: 100;
+            animation: pulse 2s infinite;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .filter-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .emotion-detail {
+                padding: 30px 20px;
+            }
+            
+            .description-title {
+                font-size: 1rem;
+            }
+            
+            .help-content {
+                padding: 30px 20px;
+            }
+            
+            .game-options {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .filter-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero-title {
+                font-size: 1.8rem;
+            }
+            
+            .search-input {
+                padding-left: 45px;
+                font-size: 0.95rem;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+                gap: 5px;
+                padding: 10px;
+                text-align: center;
+            }
+            
+            .header-controls {
+                justify-content: center;
+            }
+            
+            .game-stats {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Modern Preloader -->
+    <div id="preloader">
+        <div class="preloader-content">
+            <div class="preloader-cube">
+                <div class="cube-face"></div>
+                <div class="cube-face"></div>
+                <div class="cube-face"></div>
+                <div class="cube-face"></div>
+                <div class="cube-face"></div>
+                <div class="cube-face"></div>
+            </div>
+            <!-- Particles -->
+            <div class="preloader-particles">
+                <!-- Particles will be generated by JS -->
+            </div>
+        </div>
+        <div class="preloader-text">Загрузка эмоций...<br><small>Найди себя через эмоции</small></div>
+    </div>
+    
+    <div class="secret-indicator"></div>
+    
+    <div class="container">
+        <header class="header">
+            <h1 class="logo">ЭмоцииFinder</h1>
+            <div class="header-controls">
+                <button class="icon-btn game-button" aria-label="Игра" id="gameButton">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M15 9l-3 3-3-3"/>
+                    </svg>
+                </button>
+                <button class="icon-btn emotion-day-button" aria-label="Эмоция дня" id="emotionDayButton">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="9" y1="21" x2="9" y2="9"/>
+                    </svg>
+                </button>
+                <button class="icon-btn help-button" aria-label="Помощь">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="17" r="1" fill="currentColor"/>
+                    </svg>
+                </button>
+                <button class="icon-btn theme-toggle" aria-label="Сменить тему">
+                    <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <!-- Moon icon (default for dark theme) -->
+                        <path id="moon-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2"/>
+                        <!-- Sun icon (hidden by default) -->
+                        <g id="sun-icon" style="display: none;">
+                            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
+                            <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2"/>
+                            <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2"/>
+                            <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2"/>
+                            <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2"/>
+                        </g>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Emotion of the day - hidden by default -->
+        <div class="emotion-of-day" id="emotionOfDay">
+            <div class="badge">Эмоция дня</div>
+            <h3>Благодарность / Gratitude</h3>
+            <p>Чувство признательности за что-то полученное или пережитое</p>
+            <div class="actions">
+                <button class="favorite-btn active">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                </button>
+                <button class="view-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Game Section -->
+        <section class="game-section" id="gameSection">
+            <div class="game-header">
+                <h3 class="game-title">Угадай эмоцию</h3>
+                <div class="game-stats">
+                    <span>Очки: <span id="gameScore">0</span></span>
+                    <span>Вопрос: <span id="gameQuestionCount">1/5</span></span>
+                </div>
+            </div>
+            
+            <div class="game-question" id="gameQuestion">
+                Описание эмоции появится здесь...
+            </div>
+            
+            <div class="game-options" id="gameOptions">
+                <div class="game-option" data-index="0">Вариант 1</div>
+                <div class="game-option" data-index="1">Вариант 2</div>
+                <div class="game-option" data-index="2">Вариант 3</div>
+                <div class="game-option" data-index="3">Вариант 4</div>
+            </div>
+            
+            <div class="game-controls">
+                <button class="game-btn next" id="gameNextBtn" disabled>Следующий вопрос</button>
+                <button class="game-btn restart" id="gameRestartBtn">Начать заново</button>
+            </div>
+            
+            <div class="game-result" id="gameResult">
+                <h3 class="result-title">Игра завершена!</h3>
+                <div class="result-score">Ваш результат: <span id="finalScore">0</span></div>
+                <button class="game-btn restart" id="gamePlayAgainBtn">Играть снова</button>
+            </div>
+        </section>
+
+        <main>
+            <section class="hero-section">
+                <h2 class="hero-title">
+                    <span class="typing-text" id="changing-text"></span>
+                </h2>
+                <p class="hero-subtitle">Поиск эмоций для приложения How We Feel</p>
+            </section>
+
+            <section class="search-section">
+                <div class="search-container">
+                    <div class="search-wrapper">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Введите название эмоции или описание...">
+                        <div class="search-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                                <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <button class="random-btn" id="randomEmotion" title="Случайная эмоция">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M18 21l-3-3 3-3"/>
+                            <path d="M6 3l3 3-3 3"/>
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <section class="filter-section">
+                <div class="section-header">
+                    <h3 class="section-title">Категории</h3>
+                    <button class="clear-filters">Очистить все</button>
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn red" data-category="red">
+                        <span>Красные</span>
+                        <span class="filter-count">36</span>
+                    </button>
+                    <button class="filter-btn yellow" data-category="yellow">
+                        <span>Желтые</span>
+                        <span class="filter-count">36</span>
+                    </button>
+                    <button class="filter-btn green" data-category="green">
+                        <span>Зеленые</span>
+                        <span class="filter-count">36</span>
+                    </button>
+                    <button class="filter-btn blue" data-category="blue">
+                        <span>Синие</span>
+                        <span class="filter-count">36</span>
+                    </button>
+                </div>
+                <div class="favorite-filter">
+                    <button class="favorite-filter-btn" id="favoriteFilterBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        <span>Избранное</span>
+                        <span class="filter-count" id="favoriteCount">0</span>
+                    </button>
+                </div>
+            </section>
+
+            <section class="results-section" id="resultsContainer">
+                <!-- Results will be generated by JavaScript -->
+            </section>
+        </main>
+    </div>
+    
+    <!-- Floating favorite -->
+    <div class="floating-favorite" id="floatingFavorite">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <div class="badge" id="floatingBadge">0</div>
+    </div>
+    
+    <!-- Quick action buttons -->
+    <div class="quick-action-btn" id="quickRandom" title="Случайная эмоция">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M18 21l-3-3 3-3"/>
+            <path d="M6 3l3 3-3 3"/>
+        </svg>
+    </div>
+    <div class="quick-action-btn" id="quickSearch" title="Быстрый поиск">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+            <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
+        </svg>
+    </div>
+    <div class="quick-action-btn" id="quickTheme" title="Сменить тему">
+        <svg id="theme-icon-quick" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2"/>
+        </svg>
+    </div>
+    
+    <!-- Emotion Detail Modal -->
+    <div id="description-modal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </button>
+            <div class="emotion-detail">
+                <h3 id="emotion-title" class="emotion-title"></h3>
+                <div class="emotion-category" id="emotion-category"></div>
+                <div class="description-block">
+                    <h4 class="description-title">
+                        <span>РУССКОЕ ОПИСАНИЕ</span>
+                    </h4>
+                    <p class="description-text" id="emotion-description-ru"></p>
+                </div>
+                <div class="description-block">
+                    <h4 class="description-title">
+                        <span>АНГЛИЙСКОЕ ОПИСАНИЕ</span>
+                    </h4>
+                    <p class="description-text" id="emotion-description-en"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </button>
+            <div class="help-content">
+                <h3 class="help-title">Как пользоваться</h3>
+                <div class="help-steps">
+                    <div class="help-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4 class="step-title">Поиск эмоций</h4>
+                            <p class="step-description">Введите название эмоции или описание на любом языке. Поиск работает как по русским, так и по английским названиям.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4 class="step-title">Фильтрация по категориям</h4>
+                            <p class="step-description">Используйте цветные кнопки для фильтрации эмоций по категориям. Нажмите "Очистить все" чтобы сбросить фильтры.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4 class="step-title">Просмотр описания</h4>
+                            <p class="step-description">Нажмите на любую эмоцию или кнопку просмотра, чтобы увидеть подробное описание на русском и английском языках.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4 class="step-title">Избранное</h4>
+                            <p class="step-description">Нажмите на сердечко, чтобы добавить эмоцию в избранное. Используйте фиолетовый фильтр для просмотра избранных эмоций.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4 class="step-title">Секретные команды</h4>
+                            <p class="step-description">Тройной клик - активирует секретный режим. R+A+I+N+B+O+W - радужный режим. Ищите "редкие эмоции" для доступа к секретным.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="step-number">6</div>
+                        <div class="step-content">
+                            <h4 class="step-title">Мини-игра</h4>
+                            <p class="step-description">Нажмите на иконку игры в шапке, чтобы проверить свои знания эмоций. Угадайте эмоцию по описанию!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="copyright">© 2023 ЭмоцииFinder</div>
+            <div class="version">v2.0.0</div>
+        </div>
+    </footer>
+
+    <script>
+        // Emotions database (36 per category + secret emotions)
+        const emotions = [
+            // Red emotions (36)
+            { 
+                id: 1, 
+                name: { en: "Passionate", ru: "Страстный" }, 
+                category: "red", 
+                description: { 
+                    ru: "Сильное чувство энтузиазма или желания, часто связанное с любовью, гневом или другим интенсивным чувством.", 
+                    en: "A strong feeling of enthusiasm or excitement, often related to love, anger, or other intense feelings." 
+                } 
+            },
+            { 
+                id: 2, 
+                name: { en: "Excited", ru: "Взволнованный" }, 
+                category: "red", 
+                description: { 
+                    ru: "Состояние сильного эмоционального подъема, предвкушения или волнения по поводу предстоящего события.", 
+                    en: "A state of high emotional arousal, anticipation, or agitation about an upcoming event." 
+                } 
+            },
+            { 
+                id: 3, 
+                name: { en: "Angry", ru: "Злой" }, 
+                category: "red", 
+                description: { 
+                    ru: "Сильное чувство недовольства, враждебности или раздражения.", 
+                    en: "A strong feeling of displeasure, hostility, or irritation." 
+                } 
+            },
+            { 
+                id: 4, 
+                name: { en: "Frustrated", ru: "Разочарованный" }, 
+                category: "red", 
+                description: { 
+                    ru: "Чувство расстройства или раздражения, вызванное невозможностью изменить или достичь чего-либо.", 
+                    en: "Feeling upset or annoyed as a result of being unable to change or achieve something." 
+                } 
+            },
+            { 
+                id: 5, 
+                name: { en: "Annoyed", ru: "Раздраженный" }, 
+                category: "red", 
+                description: { 
+                    ru: "Легкое чувство раздражения или недовольства.", 
+                    en: "Slightly angry; irritated." 
+                } 
+            },
+            { 
+                id: 6, 
+                name: { en: "Impatient", ru: "Нетерпеливый" }, 
+                category: "red", 
+                description: { 
+                    ru: "Чувство беспокойства или раздражения из-за задержки или необходимости ждать.", 
+                    en: "Feeling restless or annoyed due to a delay or the need to wait." 
+                } 
+            },
+            { 
+                id: 7, 
+                name: { en: "Irritated", ru: "Раздосадованный" }, 
+                category: "red", 
+                description: { 
+                    ru: "Чувство легкого гнева или раздражения.", 
+                    en: "Feeling slight anger or annoyance." 
+                } 
+            },
+            { 
+                id: 8, 
+                name: { en: "Hostile", ru: "Враждебный" }, 
+                category: "red", 
+                description: { 
+                    ru: "Проявление неприязни или антагонизма по отношению к кому-либо или чему-либо.", 
+                    en: "Showing or feeling opposition or dislike; unfriendly." 
+                } 
+            },
+            { 
+                id: 9, 
+                name: { en: "Aggravated", ru: "Озлобленный" }, 
+                category: "red", 
+                description: { 
+                    ru: "Чувство раздражения или гнева, усугубленное внешними обстоятельствами.", 
+                    en: "Feeling annoyed or angry, especially due to worsening circumstances." 
+                } 
+            },
+            { 
+                id: 10, 
+                name: { en: "Furious", ru: "Взбешенный" }, 
+                category: "red", 
+                description: { 
+                    ru: "Чрезвычайно злой или яростный.", 
+                    en: "Extremely angry; full of rage." 
+                } 
+            },
+            // ... (other red emotions - total 36)
+            
+            // Yellow emotions (36)
+            { 
+                id: 37, 
+                name: { en: "Happy", ru: "Счастливый" }, 
+                category: "yellow", 
+                description: { 
+                    ru: "Чувство удовольствия или удовлетворенности.", 
+                    en: "Feeling or showing pleasure or contentment." 
+                } 
+            },
+            { 
+                id: 38, 
+                name: { en: "Joyful", ru: "Радостный" }, 
+                category: "yellow", 
+                description: { 
+                    ru: "Чувство великого удовольствия и счастья.", 
+                    en: "Feeling or expressing great pleasure and happiness." 
+                } 
+            },
+            { 
+                id: 39, 
+                name: { en: "Excited", ru: "Взволнованный" }, 
+                category: "yellow", 
+                description: { 
+                    ru: "Очень взволнованный и полный энтузиазма.", 
+                    en: "Very enthusiastic and eager." 
+                } 
+            },
+            { 
+                id: 40, 
+                name: { en: "Optimistic", ru: "Оптимистичный" }, 
+                category: "yellow", 
+                description: { 
+                    ru: "Наличие позитивного взгляда на будущее или успех чего-либо.", 
+                    en: "Having a positive outlook on future or the success of something." 
+                } 
+            },
+            { 
+                id: 41, 
+                name: { en: "Proud", ru: "Гордый" }, 
+                category: "yellow", 
+                description: { 
+                    ru: "Чувство глубокого удовлетворения от собственных достижений или достижений близких.", 
+                    en: "Feeling deep pleasure or satisfaction as a result of one's own achievements or those of someone close." 
+                } 
+            },
+            { 
+                id: 42, 
+                name: { en: "Amused", ru: "Развеселенный" }, 
+                category: "yellow", 
+                description: { 
+                    ru: "Находящий что-то забавным или развлекательным.", 
+                    en: "Finding something funny or entertaining." 
+                } 
+            },
+            { 
+                id: 43, 
+                name: { en: "Delighted", ru: "Восхищенный" }, 
+                category: "yellow", 
+                description: { 
+                    ru: "Чувство большого удовольствия.", 
+                    en: "Feeling or showing great pleasure." 
+                } 
+            },
+            { 
+                id: 44, 
+                name: { en: "Hopeful", ru: "Надеющийся" }, 
+                category: "yellow", 
+                description: { 
+                    ru: "Чувство оптимизма и уверенности в положительном исходе.", 
+                    en: "Feeling optimism and confidence about a positive outcome." 
+                } 
+            },
+            { 
+                id: 45, 
+                name: { en: "Playful", ru: "Игривый" }, 
+                category: "yellow", 
+                description: { 
+                    ru: "Настроенный на игру или развлечение.", 
+                    en: "In a mood for games or amusement." 
+                } 
+            },
+            { 
+                id: 46, 
+                name: { en: "Enthusiastic", ru: "Воодушевленный" }, 
+                category: "yellow", 
+                description: { 
+                    ru: "Проявление интенсивного и страстного увлечения чем-либо.", 
+                    en: "Showing intense and eager enjoyment or interest." 
+                } 
+            },
+            // ... (other yellow emotions - total 36)
+            
+            // Green emotions (36)
+            { 
+                id: 73, 
+                name: { en: "Calm", ru: "Спокойный" }, 
+                category: "green", 
+                description: { 
+                    ru: "Отсутствие сильных эмоций, беспокойства или волнения.", 
+                    en: "The state of being free from strong emotions, anxiety, or agitation." 
+                } 
+            },
+            { 
+                id: 74, 
+                name: { en: "Relaxed", ru: "Расслабленный" }, 
+                category: "green", 
+                description: { 
+                    ru: "Свободный от напряжения и тревоги.", 
+                    en: "Free from tension and anxiety." 
+                } 
+            },
+            { 
+                id: 75, 
+                name: { en: "Content", ru: "Довольный" }, 
+                category: "green", 
+                description: { 
+                    ru: "Состояние мирного счастья и удовлетворенности.", 
+                    en: "In a state of peaceful happiness and satisfaction." 
+                } 
+            },
+            { 
+                id: 76, 
+                name: { en: "Grateful", ru: "Благодарный" }, 
+                category: "green", 
+                description: { 
+                    ru: "Чувство благодарности и признательности.", 
+                    en: "Feeling thankful and appreciative." 
+                } 
+            },
+            { 
+                id: 77, 
+                name: { en: "Peaceful", ru: "Умиротворенный" }, 
+                category: "green", 
+                description: { 
+                    ru: "Свободный от беспокойства или стресса.", 
+                    en: "Free from disturbance or stress." 
+                } 
+            },
+            { 
+                id: 78, 
+                name: { en: "Balanced", ru: "Сбалансированный" }, 
+                category: "green", 
+                description: { 
+                    ru: "Состояние эмоционального равновесия и стабильности.", 
+                    en: "In a state of emotional equilibrium and stability." 
+                } 
+            },
+            { 
+                id: 79, 
+                name: { en: "Satisfied", ru: "Удовлетворенный" }, 
+                category: "green", 
+                description: { 
+                    ru: "Чувство удовольствия от выполнения потребности или желания.", 
+                    en: "Feeling pleasure from the fulfillment of a need or desire." 
+                } 
+            },
+            { 
+                id: 80, 
+                name: { en: "Comfortable", ru: "Комфортный" }, 
+                category: "green", 
+                description: { 
+                    ru: "Состояние физического или психического расслабления без стресса.", 
+                    en: "In a state of physical or mental ease without stress." 
+                } 
+            },
+            { 
+                id: 81, 
+                name: { en: "Secure", ru: "Уверенный" }, 
+                category: "green", 
+                description: { 
+                    ru: "Чувство защищенности и отсутствия тревоги или страха.", 
+                    en: "Feeling safe and free from anxiety or fear." 
+                } 
+            },
+            { 
+                id: 82, 
+                name: { en: "Assured", ru: "Уверенный в себе" }, 
+                category: "green", 
+                description: { 
+                    ru: "Чувство уверенности в своих силах или способностях.", 
+                    en: "Feeling confident in one's abilities or strengths." 
+                } 
+            },
+            // ... (other green emotions - total 36)
+            
+            // Blue emotions (36)
+            { 
+                id: 109, 
+                name: { en: "Sad", ru: "Грустный" }, 
+                category: "blue", 
+                description: { 
+                    ru: "Чувство несчастья или подавленности.", 
+                    en: "Feeling unhappy or downcast." 
+                } 
+            },
+            { 
+                id: 110, 
+                name: { en: "Tired", ru: "Усталый" }, 
+                category: "blue", 
+                description: { 
+                    ru: "Потребность в отдыхе или сне, особенно из-за физических усилий.", 
+                    en: "In need of rest or sleep, especially due to physical exertion." 
+                } 
+            },
+            { 
+                id: 111, 
+                name: { en: "Bored", ru: "Скучающий" }, 
+                category: "blue", 
+                description: { 
+                    ru: "Чувство усталости и неудовлетворенности из-за отсутствия интереса.", 
+                    en: "Feeling weary and dissatisfied due to lack of interest." 
+                } 
+            },
+            { 
+                id: 112, 
+                name: { en: "Lonely", ru: "Одинокий" }, 
+                category: "blue", 
+                description: { 
+                    ru: "Печаль из-за отсутствия компании или изоляции.", 
+                    en: "Sadness because one has no company or feels isolated." 
+                } 
+            },
+            { 
+                id: 113, 
+                name: { en: "Disappointed", ru: "Разочарованный" }, 
+                category: "blue", 
+                description: { 
+                    ru: "Чувство неудовлетворенности, когда что-то не оправдывает ожиданий.", 
+                    en: "Feeling let down when something does not meet expectations." 
+                } 
+            },
+            { 
+                id: 114, 
+                name: { en: "Pessimistic", ru: "Пессимистичный" }, 
+                category: "blue", 
+                description: { 
+                    ru: "Склонность видеть наихудший аспект вещей или верить, что наихудшее произойдет.", 
+                    en: "Tending to see the worst aspect of things or believe that the worst will happen." 
+                } 
+            },
+            { 
+                id: 115, 
+                name: { en: "Apathetic", ru: "Апатичный" }, 
+                category: "blue", 
+                description: { 
+                    ru: "Отсутствие интереса, энтузиазма или беспокойства.", 
+                    en: "Lack of interest, enthusiasm, or concern." 
+                } 
+            },
+            { 
+                id: 116, 
+                name: { en: "Numb", ru: "Оцепенелый" }, 
+                category: "blue", 
+                description: { 
+                    ru: "Лишенный чувства или реакции; оцепенелый.", 
+                    en: "Deprived of feeling or responsiveness; stunned." 
+                } 
+            },
+            { 
+                id: 117, 
+                name: { en: "Weary", ru: "Измученный" }, 
+                category: "blue", 
+                description: { 
+                    ru: "Чувство или проявление крайней усталости, особенно в результате длительного напряжения.", 
+                    en: "Feeling or showing extreme tiredness, especially as a result of prolonged exertion." 
+                } 
+            },
+            { 
+                id: 118, 
+                name: { en: "Miserable", ru: "Несчастный" }, 
+                category: "blue", 
+                description: { 
+                    ru: "Чувство глубокого несчастья или дискомфорта.", 
+                    en: "Feeling deeply unhappy or uncomfortable." 
+                } 
+            },
+            // ... (other blue emotions - total 36)
+            
+            // Secret emotions
+            { 
+                id: 200, 
+                name: { en: "Sonder", ru: "Осознание уникальности" }, 
+                category: "secret", 
+                description: { 
+                    ru: "Осознание того, что каждый случайный прохожий живет столь же сложной и уникальной жизнью, как и ваша собственная.", 
+                    en: "The realization that each random passerby is living a life as vivid and complex as your own." 
+                },
+                secret: true,
+                keywords: ["уникальность", "осознание", "sonder", "жизнь", "редкие эмоции"]
+            },
+            { 
+                id: 201, 
+                name: { en: "Liberosis", ru: "Желание беззаботности" }, 
+                category: "secret", 
+                description: { 
+                    ru: "Желание меньше заботиться о вещах, облегчение от чрезмерной ответственности.", 
+                    en: "The desire to care less about things, to relieve the burden of responsibility." 
+                },
+                secret: true,
+                keywords: ["беззаботность", "легкость", "liberosis", "свобода", "редкие эмоции"]
+            },
+            { 
+                id: 202, 
+                name: { en: "Vellichor", ru: "Очарование старых книг" }, 
+                category: "secret", 
+                description: { 
+                    ru: "Странная ностальгия по местам, которых вы никогда не посещали, или чувство очарования при виде старых книг.", 
+                    en: "The strange wistfulness of places you've never been to or the charm of old books." 
+                },
+                secret: true,
+                keywords: ["книги", "ностальгия", "vellichor", "редкие эмоции"]
+            },
+            { 
+                id: 203, 
+                name: { en: "Monachopsis", ru: "Чувство несоответствия" }, 
+                category: "secret", 
+                description: { 
+                    ru: "Странное ощущение, что вы не на своем месте, как будто вы не вписываетесь в текущую ситуацию или окружение.", 
+                    en: "The subtle but persistent feeling of being out of place, as if you don't belong in your current situation." 
+                },
+                secret: true,
+                keywords: ["несоответствие", "monachopsis", "редкие эмоции"]
+            }
+        ];
+
+        // DOM Elements
+        const searchInput = document.getElementById('searchInput');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const clearFiltersBtn = document.querySelector('.clear-filters');
+        const descriptionModal = document.getElementById('description-modal');
+        const helpModal = document.getElementById('help-modal');
+        const helpButton = document.querySelector('.help-button');
+        const modalCloseButtons = document.querySelectorAll('.modal-close');
+        const emotionTitle = document.getElementById('emotion-title');
+        const emotionCategory = document.getElementById('emotion-category');
+        const emotionDescRu = document.getElementById('emotion-description-ru');
+        const emotionDescEn = document.getElementById('emotion-description-en');
+        const themeToggle = document.querySelector('.theme-toggle');
+        const changingText = document.getElementById('changing-text');
+        const randomEmotionBtn = document.getElementById('randomEmotion');
+        const favoriteFilterBtn = document.getElementById('favoriteFilterBtn');
+        const favoriteCount = document.getElementById('favoriteCount');
+        const floatingFavorite = document.getElementById('floatingFavorite');
+        const floatingBadge = document.getElementById('floatingBadge');
+        const quickRandom = document.getElementById('quickRandom');
+        const quickSearch = document.getElementById('quickSearch');
+        const quickTheme = document.getElementById('quickTheme');
+        const emotionDayButton = document.getElementById('emotionDayButton');
+        const emotionOfDay = document.getElementById('emotionOfDay');
+        const gameButton = document.getElementById('gameButton');
+        const gameSection = document.getElementById('gameSection');
+        const gameQuestion = document.getElementById('gameQuestion');
+        const gameOptions = document.getElementById('gameOptions');
+        const gameNextBtn = document.getElementById('gameNextBtn');
+        const gameRestartBtn = document.getElementById('gameRestartBtn');
+        const gamePlayAgainBtn = document.getElementById('gamePlayAgainBtn');
+        const gameResult = document.getElementById('gameResult');
+        const gameScore = document.getElementById('gameScore');
+        const gameQuestionCount = document.getElementById('gameQuestionCount');
+        const finalScore = document.getElementById('finalScore');
+
+        // State
+        let activeFilters = [];
+        let currentSearch = '';
+        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+        let secretMode = false;
+        let gameState = {
+            active: false,
+            currentQuestion: 0,
+            totalQuestions: 5,
+            score: 0,
+            currentEmotion: null,
+            correctIndex: null
+        };
+
+        // Initialize the app
+        function init() {
+            renderEmotions(emotions);
+            setupEventListeners();
+            startTextAnimation();
+            setupTheme();
+            updateFavoriteCount();
+            createPreloaderParticles();
+            
+            // Инициализация новых фич
+            const emotionOfDayData = getEmotionOfTheDay();
+            updateEmotionOfDay(emotionOfDayData);
+            setupFloatingFavorite();
+            setupQuickActions();
+            setupRainbowMode();
+            setupGame();
+        }
+
+        // Create particles for preloader
+        function createPreloaderParticles() {
+            const particlesContainer = document.querySelector('.preloader-particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'preloader-particle';
+                particle.style.setProperty('--x', Math.random());
+                particle.style.setProperty('--y', Math.random());
+                particle.style.animationDelay = `${Math.random() * 2}s`;
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Set up theme from localStorage
+        function setupTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                updateThemeIcon(true);
+            } else {
+                updateThemeIcon(false);
+            }
+        }
+
+        // Update theme icon based on current theme
+        function updateThemeIcon(isLight) {
+            const moonIcon = document.getElementById('moon-icon');
+            const sunIcon = document.getElementById('sun-icon');
+            
+            if (isLight) {
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'block';
+            } else {
+                moonIcon.style.display = 'block';
+                sunIcon.style.display = 'none';
+            }
+        }
+
+        // Set up all event listeners
+        function setupEventListeners() {
+            // Search input
+            searchInput.addEventListener('input', (e) => {
+                currentSearch = e.target.value.toLowerCase().trim();
+                filterEmotions();
+            });
+
+            // Filter buttons
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const category = button.dataset.category;
+                    
+                    if (activeFilters.includes(category)) {
+                        // Remove filter
+                        activeFilters = activeFilters.filter(f => f !== category);
+                        button.classList.remove('active');
+                    } else {
+                        // Add filter
+                        activeFilters.push(category);
+                        button.classList.add('active');
+                    }
+                    
+                    filterEmotions();
+                });
+            });
+
+            // Favorite filter button
+            favoriteFilterBtn.addEventListener('click', () => {
+                favoriteFilterBtn.classList.toggle('active');
+                if (favoriteFilterBtn.classList.contains('active')) {
+                    activeFilters.push('favorite');
+                } else {
+                    activeFilters = activeFilters.filter(f => f !== 'favorite');
+                }
+                filterEmotions();
+            });
+
+            // Clear filters button
+            clearFiltersBtn.addEventListener('click', () => {
+                activeFilters = [];
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                favoriteFilterBtn.classList.remove('active');
+                searchInput.value = '';
+                currentSearch = '';
+                filterEmotions();
+            });
+
+            // Help modal
+            helpButton.addEventListener('click', () => {
+                helpModal.classList.add('active');
+            });
+
+            // Close modals
+            modalCloseButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    descriptionModal.classList.remove('active');
+                    helpModal.classList.remove('active');
+                });
+            });
+
+            // Close modals when clicking overlay
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', () => {
+                    descriptionModal.classList.remove('active');
+                    helpModal.classList.remove('active');
+                });
+            });
+
+            // Theme toggle
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+                const isLight = document.body.classList.contains('light-theme');
+                // Save preference to localStorage
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                updateThemeIcon(isLight);
+            });
+
+            // Random emotion button
+            randomEmotionBtn.addEventListener('click', () => {
+                const visibleEmotions = emotions.filter(emotion => 
+                    !emotion.secret || (emotion.secret && secretMode)
+                );
+                
+                if (visibleEmotions.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * visibleEmotions.length);
+                    showEmotionDescription(visibleEmotions[randomIndex]);
+                }
+            });
+
+            // Emotion of day button
+            emotionDayButton.addEventListener('click', () => {
+                emotionOfDay.classList.toggle('visible');
+            });
+
+            // Hide emotion of day when scrolling
+            let lastScrollTop = 0;
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                if (scrollTop > lastScrollTop && emotionOfDay.classList.contains('visible')) {
+                    // Scrolling down, hide the panel
+                    emotionOfDay.classList.remove('visible');
+                }
+                lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+            });
+
+            // Game button
+            gameButton.addEventListener('click', () => {
+                gameSection.classList.toggle('active');
+                if (gameSection.classList.contains('active')) {
+                    startNewGame();
+                }
+            });
+
+            // Secret mode activation (triple click anywhere)
+            let clickCount = 0;
+            let lastClickTime = 0;
+            
+            document.body.addEventListener('click', (e) => {
+                const currentTime = new Date().getTime();
+                
+                if (currentTime - lastClickTime > 500) {
+                    clickCount = 0;
+                }
+                
+                clickCount++;
+                lastClickTime = currentTime;
+                
+                if (clickCount === 3) {
+                    secretMode = !secretMode;
+                    clickCount = 0;
+                    filterEmotions();
+                    showSecretNotification();
+                    createConfetti();
+                }
+            });
+        }
+
+        // Filter emotions based on search and category filters
+        function filterEmotions() {
+            let filtered = emotions;
+            
+            // Apply search filter
+            if (currentSearch) {
+                filtered = filtered.filter(emotion => {
+                    const nameEn = emotion.name.en.toLowerCase();
+                    const nameRu = emotion.name.ru.toLowerCase();
+                    const descEn = emotion.description.en.toLowerCase();
+                    const descRu = emotion.description.ru.toLowerCase();
+                    
+                    const matchesSearch = nameEn.includes(currentSearch) || 
+                           nameRu.includes(currentSearch) ||
+                           descEn.includes(currentSearch) ||
+                           descRu.includes(currentSearch);
+                           
+                    // For secret emotions, check keywords
+                    if (emotion.secret) {
+                        const matchesKeyword = emotion.keywords.some(keyword => 
+                            keyword.toLowerCase().includes(currentSearch)
+                        );
+                        return matchesSearch || matchesKeyword;
+                    }
+                    
+                    return matchesSearch;
+                });
+            } else {
+                // Hide secret emotions when not searching
+                filtered = filtered.filter(emotion => !emotion.secret);
+            }
+            
+            // Apply category filters
+            if (activeFilters.length > 0) {
+                filtered = filtered.filter(emotion => {
+                    if (activeFilters.includes('favorite')) {
+                        return favorites.includes(emotion.id);
+                    }
+                    return activeFilters.includes(emotion.category);
+                });
+            }
+            
+            renderEmotions(filtered);
+        }
+
+        // Render emotions to the DOM
+        function renderEmotions(emotionsToRender) {
+            // Group by category
+            const grouped = groupByCategory(emotionsToRender);
+            
+            // Clear container
+            resultsContainer.innerHTML = '';
+            
+            // Check if no results
+            if (emotionsToRender.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Эмоции не найдены</h3>
+                        <p>Попробуйте изменить поисковый запрос или сбросить фильтры</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Render each category
+            const categories = {
+                red: { name: "Красные", subtitle: "RED", count: 0 },
+                yellow: { name: "Желтые", subtitle: "YELLOW", count: 0 },
+                green: { name: "Зеленые", subtitle: "GREEN", count: 0 },
+                blue: { name: "Синие", subtitle: "BLUE", count: 0 },
+                favorite: { name: "Избранное", subtitle: "FAVORITE", count: 0 },
+                secret: { name: "Секретные", subtitle: "SECRET", count: 0 }
+            };
+            
+            // Render sections
+            for (const category in grouped) {
+                const emotionsInCategory = grouped[category];
+                categories[category].count = emotionsInCategory.length;
+                
+                // Skip empty sections
+                if (emotionsInCategory.length === 0) continue;
+                
+                const categorySection = document.createElement('div');
+                categorySection.className = 'category-section';
+                
+                // Special styling for secret category
+                if (category === 'secret') {
+                    categorySection.innerHTML = `
+                        <div class="category-header">
+                            <div class="category-indicator purple"></div>
+                            <h3 class="category-title purple">${categories[category].name} <span class="category-subtitle">${categories[category].subtitle}</span></h3>
+                        </div>
+                        <div class="emotions-list"></div>
+                    `;
+                } else {
+                    categorySection.innerHTML = `
+                        <div class="category-header">
+                            <div class="category-indicator ${category}"></div>
+                            <h3 class="category-title ${category}">${categories[category].name} <span class="category-subtitle">${categories[category].subtitle}</span></h3>
+                        </div>
+                        <div class="emotions-list"></div>
+                    `;
+                }
+                
+                const emotionsList = categorySection.querySelector('.emotions-list');
+                
+                emotionsInCategory.forEach(emotion => {
+                    const isFavorite = favorites.includes(emotion.id);
+                    const emotionItem = document.createElement('div');
+                    emotionItem.className = 'emotion-item';
+                    emotionItem.dataset.id = emotion.id;
+                    emotionItem.innerHTML = `
+                        <div class="emotion-names">
+                            <div class="emotion-name-en">${emotion.name.en}</div>
+                            <div class="emotion-name-ru">${emotion.name.ru}</div>
+                        </div>
+                        <div class="emotion-actions">
+                            <button class="favorite-btn ${isFavorite ? 'active' : ''}">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="${isFavorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                </svg>
+                            </button>
+                            <button class="view-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
+                                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Add click event to show description
+                    emotionItem.addEventListener('click', (e) => {
+                        if (!e.target.closest('.emotion-actions')) {
+                            showEmotionDescription(emotion);
+                        }
+                    });
+                    
+                    // Add favorite button event
+                    const favBtn = emotionItem.querySelector('.favorite-btn');
+                    favBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleFavorite(emotion.id);
+                        favBtn.classList.toggle('active');
+                        const svg = favBtn.querySelector('svg');
+                        if (favBtn.classList.contains('active')) {
+                            svg.setAttribute('fill', 'currentColor');
+                            favBtn.classList.add('animating');
+                            setTimeout(() => {
+                                favBtn.classList.remove('animating');
+                            }, 600);
+                        } else {
+                            svg.setAttribute('fill', 'none');
+                        }
+                        updateFavoriteCount();
+                        if (activeFilters.includes('favorite')) {
+                            filterEmotions();
+                        }
+                    });
+                    
+                    // Add view button event
+                    const viewBtn = emotionItem.querySelector('.view-btn');
+                    viewBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showEmotionDescription(emotion);
+                    });
+                    
+                    emotionsList.appendChild(emotionItem);
+                });
+                
+                resultsContainer.appendChild(categorySection);
+            }
+            
+            // Update filter counts
+            updateFilterCounts(categories);
+            
+            // Add delay for card animations
+            setTimeout(() => {
+                const sections = document.querySelectorAll('.category-section');
+                sections.forEach((section, index) => {
+                    section.style.animationDelay = `${index * 0.1}s`;
+                });
+            }, 100);
+        }
+
+        // Toggle favorite status
+        function toggleFavorite(emotionId) {
+            const index = favorites.indexOf(emotionId);
+            if (index === -1) {
+                favorites.push(emotionId);
+            } else {
+                favorites.splice(index, 1);
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            updateFavoriteCount();
+        }
+
+        // Update favorite count display
+        function updateFavoriteCount() {
+            favoriteCount.textContent = favorites.length;
+            floatingBadge.textContent = favorites.length;
+            const favoriteBtn = document.querySelector('.favorite-filter-btn');
+            if (favoriteBtn) {
+                favoriteBtn.querySelector('.filter-count').textContent = favorites.length;
+            }
+        }
+
+        // Group emotions by category
+        function groupByCategory(emotions) {
+            const groups = {
+                red: [],
+                yellow: [],
+                green: [],
+                blue: [],
+                favorite: [],
+                secret: []
+            };
+            
+            emotions.forEach(emotion => {
+                if (groups[emotion.category] && !emotion.secret) {
+                    groups[emotion.category].push(emotion);
+                }
+                
+                if (favorites.includes(emotion.id) && !emotion.secret) {
+                    groups.favorite.push(emotion);
+                }
+                
+                if (emotion.secret) {
+                    groups.secret.push(emotion);
+                }
+            });
+            
+            return groups;
+        }
+
+        // Update filter counts in UI
+        function updateFilterCounts(categories) {
+            filterButtons.forEach(button => {
+                const category = button.dataset.category;
+                const countEl = button.querySelector('.filter-count');
+                countEl.textContent = categories[category]?.count || 0;
+            });
+        }
+
+        // Show emotion description modal
+        function showEmotionDescription(emotion) {
+            emotionTitle.textContent = `${emotion.name.ru} / ${emotion.name.en}`;
+            
+            // Set category text
+            const categoryNames = {
+                red: "Красная эмоция",
+                yellow: "Желтая эмоция",
+                green: "Зеленая эмоция",
+                blue: "Синяя эмоция",
+                secret: "Секретная эмоция"
+            };
+            emotionCategory.textContent = categoryNames[emotion.category] || "Эмоция";
+            
+            // Set category color
+            emotionTitle.style.color = getCategoryColor(emotion.category);
+            
+            // Set descriptions
+            emotionDescRu.textContent = emotion.description.ru;
+            emotionDescEn.textContent = emotion.description.en;
+            
+            // Show modal
+            descriptionModal.classList.add('active');
+        }
+
+        // Get color for category
+        function getCategoryColor(category) {
+            switch(category) {
+                case 'red': return 'var(--accent-red)';
+                case 'yellow': return 'var(--accent-yellow)';
+                case 'green': return 'var(--accent-green)';
+                case 'blue': return 'var(--accent-blue)';
+                case 'secret': return 'var(--accent-purple)';
+                default: return 'var(--accent-purple)';
+            }
+        }
+
+        // Text animation for hero section (Apple style)
+        function startTextAnimation() {
+            const texts = [
+                "Найди свою эмоцию",
+                "Поиск по описанию",
+                "144+ эмоции",
+                "Двуязычные описания",
+                "Секретные эмоции"
+            ];
+            let index = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            let typingSpeed = 100;
+            let pauseTime = 1500;
+            
+            function type() {
+                const currentText = texts[index];
+                
+                if (isDeleting) {
+                    // Delete character
+                    changingText.textContent = currentText.substring(0, charIndex - 1);
+                    charIndex--;
+                } else {
+                    // Add character
+                    changingText.textContent = currentText.substring(0, charIndex + 1);
+                    charIndex++;
+                }
+                
+                // Determine typing speed
+                typingSpeed = isDeleting ? 50 : 100;
+                
+                if (!isDeleting && charIndex === currentText.length) {
+                    // Pause at end of word
+                    isDeleting = true;
+                    typingSpeed = pauseTime;
+                } else if (isDeleting && charIndex === 0) {
+                    // Move to next word
+                    isDeleting = false;
+                    index = (index + 1) % texts.length;
+                    typingSpeed = 500;
+                }
+                
+                setTimeout(type, typingSpeed);
+            }
+            
+            type();
+        }
+
+        // Show secret notification
+        function showSecretNotification() {
+            const notification = document.createElement('div');
+            notification.textContent = secretMode ? 'Секретный режим активирован' : 'Секретный режим деактивирован';
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.left = '50%';
+            notification.style.transform = 'translateX(-50%)';
+            notification.style.backgroundColor = 'var(--accent-purple)';
+            notification.style.color = 'white';
+            notification.style.padding = '10px 20px';
+            notification.style.borderRadius = '50px';
+            notification.style.zIndex = '1000';
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.3s';
+            notification.style.boxShadow = '0 5px 15px rgba(157, 78, 221, 0.5)';
+            
+            document.body.appendChild(notification);
+            
+            // Fade in
+            setTimeout(() => {
+                notification.style.opacity = '1';
+            }, 10);
+            
+            // Fade out and remove
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 2000);
+        }
+
+        // Emotion of the day
+        function getEmotionOfTheDay() {
+            const today = new Date().getDate();
+            const emotionsOfDay = [
+                { 
+                    id: 5, 
+                    name: { en: "Gratitude", ru: "Благодарность" }, 
+                    category: "green", 
+                    description: { 
+                        ru: "Чувство признательности за что-то полученное или пережитое", 
+                        en: "The quality of being thankful; readiness to show appreciation" 
+                    } 
+                },
+                { 
+                    id: 10, 
+                    name: { en: "Joy", ru: "Радость" }, 
+                    category: "yellow", 
+                    description: { 
+                        ru: "Чувство большого удовольства и счастья", 
+                        en: "A feeling of great pleasure and happiness" 
+                    } 
+                },
+                { 
+                    id: 15, 
+                    name: { en: "Love", ru: "Любовь" }, 
+                    category: "red", 
+                    description: { 
+                        ru: "Сильное чувство глубокой привязанности", 
+                        en: "An intense feeling of deep affection" 
+                    } 
+                },
+                { 
+                    id: 20, 
+                    name: { en: "Calm", ru: "Спокойствие" }, 
+                    category: "blue", 
+                    description: { 
+                        ru: "Состояние отсутствия сильных эмоций, беспокойства или волнения", 
+                        en: "The state of being free from strong emotions, anxiety, or agitation" 
+                    } 
+                }
+            ];
+            
+            return emotionsOfDay[today % emotionsOfDay.length];
+        }
+        
+        // Update emotion of day
+        function updateEmotionOfDay(emotion) {
+            const container = document.querySelector('.emotion-of-day');
+            container.querySelector('h3').textContent = `${emotion.name.ru} / ${emotion.name.en}`;
+            container.querySelector('p').textContent = emotion.description.ru;
+            
+            // Event handlers for buttons
+            container.querySelector('.favorite-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFavorite(emotion.id);
+            });
+            
+            container.querySelector('.view-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                showEmotionDescription(emotion);
+            });
+            
+            container.addEventListener('click', () => {
+                showEmotionDescription(emotion);
+            });
+        }
+        
+        // Floating favorite
+        function setupFloatingFavorite() {
+            floatingFavorite.addEventListener('click', () => {
+                // Activate favorite filter
+                favoriteFilterBtn.classList.add('active');
+                if (!activeFilters.includes('favorite')) {
+                    activeFilters.push('favorite');
+                }
+                filterEmotions();
+                
+                // Smooth scroll to filters
+                document.querySelector('.filter-section').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            });
+            
+            // Update badge
+            function updateFloatingBadge() {
+                floatingBadge.textContent = favorites.length;
+                if (favorites.length > 0) {
+                    floatingFavorite.style.animation = 'pulse 1.5s infinite';
+                } else {
+                    floatingFavorite.style.animation = 'float 4s ease-in-out infinite';
+                }
+            }
+            
+            updateFloatingBadge();
+            return updateFloatingBadge;
+        }
+        
+        // Quick action buttons
+        function setupQuickActions() {
+            // Activate buttons on hover
+            floatingFavorite.addEventListener('mouseenter', () => {
+                [quickRandom, quickSearch, quickTheme].forEach(btn => {
+                    btn.classList.add('active');
+                });
+            });
+            
+            // Random emotion
+            quickRandom.addEventListener('click', () => {
+                randomEmotionBtn.click();
+            });
+            
+            // Quick search
+            quickSearch.addEventListener('click', () => {
+                searchInput.focus();
+            });
+            
+            // Theme switch
+            quickTheme.addEventListener('click', () => {
+                themeToggle.click();
+            });
+        }
+        
+        // Rainbow mode
+        function setupRainbowMode() {
+            let rainbowCount = 0;
+            let lastRainbowTime = 0;
+            const combo = ['KeyR', 'KeyA', 'KeyI', 'KeyN', 'KeyB', 'KeyO', 'KeyW'];
+            
+            document.addEventListener('keydown', (e) => {
+                // Secret combo: R+A+I+N+B+O+W
+                if (e.code === combo[rainbowCount]) {
+                    rainbowCount++;
+                    
+                    if (rainbowCount === combo.length) {
+                        activateRainbowMode();
+                        rainbowCount = 0;
+                    }
+                    
+                    lastRainbowTime = Date.now();
+                } else if (Date.now() - lastRainbowTime > 2000) {
+                    rainbowCount = 0;
+                }
+            });
+        }
+        
+        function activateRainbowMode() {
+            document.body.classList.add('rainbow-mode');
+            createConfetti();
+            
+            setTimeout(() => {
+                document.body.classList.remove('rainbow-mode');
+            }, 5000);
+        }
+        
+        // Confetti system
+        function createConfetti() {
+            const colors = [
+                'var(--accent-red)', 
+                'var(--accent-yellow)', 
+                'var(--accent-green)', 
+                'var(--accent-blue)', 
+                'var(--accent-purple)'
+            ];
+            
+            for (let i = 0; i < 150; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.top = `${Math.random() * -50}vh`;
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = `${Math.random() * 10 + 5}px`;
+                confetti.style.height = confetti.style.width;
+                confetti.style.opacity = Math.random() * 0.5 + 0.5;
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                
+                document.body.appendChild(confetti);
+                
+                // Falling animation
+                confetti.animate([
+                    { 
+                        transform: `translateY(0) rotate(0deg)`,
+                        opacity: confetti.style.opacity
+                    },
+                    { 
+                        transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`,
+                        opacity: 0
+                    }
+                ], {
+                    duration: Math.random() * 3000 + 2000,
+                    easing: 'cubic-bezier(0.1, 0.8, 0.2, 1)'
+                });
+                
+                // Remove after animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+        }
+        
+        // Game setup
+        function setupGame() {
+            // Option click handler
+            gameOptions.querySelectorAll('.game-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    if (gameState.correctIndex === null || gameState.correctIndex === undefined) return;
+                    
+                    const selectedIndex = parseInt(option.dataset.index);
+                    const isCorrect = selectedIndex === gameState.correctIndex;
+                    
+                    // Mark correct and incorrect answers
+                    gameOptions.querySelectorAll('.game-option').forEach((opt, idx) => {
+                        if (idx === gameState.correctIndex) {
+                            opt.classList.add('correct');
+                        } else if (idx === selectedIndex) {
+                            opt.classList.add('incorrect');
+                        }
+                        opt.classList.remove('selected');
+                    });
+                    
+                    option.classList.add('selected');
+                    
+                    // Update score
+                    if (isCorrect) {
+                        gameState.score += 10;
+                        gameScore.textContent = gameState.score;
+                    }
+                    
+                    // Enable next button
+                    gameNextBtn.disabled = false;
+                });
+            });
+            
+            // Next question button
+            gameNextBtn.addEventListener('click', () => {
+                gameState.currentQuestion++;
+                if (gameState.currentQuestion < gameState.totalQuestions) {
+                    generateQuestion();
+                } else {
+                    // Game finished
+                    finishGame();
+                }
+            });
+            
+            // Restart buttons
+            gameRestartBtn.addEventListener('click', startNewGame);
+            gamePlayAgainBtn.addEventListener('click', startNewGame);
+        }
+        
+        // Start a new game
+        function startNewGame() {
+            gameState = {
+                active: true,
+                currentQuestion: 0,
+                totalQuestions: 5,
+                score: 0,
+                currentEmotion: null,
+                correctIndex: null
+            };
+            
+            gameScore.textContent = '0';
+            gameResult.classList.remove('active');
+            gameNextBtn.disabled = true;
+            generateQuestion();
+        }
+        
+        // Generate a new question
+        function generateQuestion() {
+            // Reset options
+            gameOptions.querySelectorAll('.game-option').forEach(opt => {
+                opt.classList.remove('correct', 'incorrect', 'selected');
+            });
+            
+            // Get random emotion (non-secret)
+            const nonSecretEmotions = emotions.filter(e => !e.secret);
+            gameState.currentEmotion = nonSecretEmotions[Math.floor(Math.random() * nonSecretEmotions.length)];
+            
+            // Set question (randomly choose Russian or English description)
+            const useRussian = Math.random() > 0.5;
+            gameQuestion.textContent = useRussian ? 
+                gameState.currentEmotion.description.ru : 
+                gameState.currentEmotion.description.en;
+            
+            // Generate options
+            const options = [gameState.currentEmotion];
+            
+            // Add 3 random emotions
+            while (options.length < 4) {
+                const randomEmotion = nonSecretEmotions[Math.floor(Math.random() * nonSecretEmotions.length)];
+                if (!options.some(e => e.id === randomEmotion.id)) {
+                    options.push(randomEmotion);
+                }
+            }
+            
+            // Shuffle options
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+            }
+            
+            // Set options text and find correct index
+            gameOptions.querySelectorAll('.game-option').forEach((option, index) => {
+                option.textContent = options[index].name.ru;
+                if (options[index].id === gameState.currentEmotion.id) {
+                    gameState.correctIndex = index;
+                }
+            });
+            
+            // Update question count
+            gameQuestionCount.textContent = `${gameState.currentQuestion + 1}/${gameState.totalQuestions}`;
+            gameNextBtn.disabled = true;
+        }
+        
+        // Finish the game
+        function finishGame() {
+            finalScore.textContent = gameState.score;
+            gameSection.querySelector('.game-header').style.display = 'none';
+            gameSection.querySelector('.game-question').style.display = 'none';
+            gameSection.querySelector('.game-options').style.display = 'none';
+            gameSection.querySelector('.game-controls').style.display = 'none';
+            gameResult.classList.add('active');
+        }
+
+        // Initialize the app when DOM is loaded
+        window.addEventListener('load', () => {
+            const preloader = document.getElementById('preloader');
+            setTimeout(() => {
+                preloader.style.opacity = '0';
+                preloader.style.visibility = 'hidden';
+                init();
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
